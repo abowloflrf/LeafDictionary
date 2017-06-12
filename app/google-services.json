@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "662335123717",
+    "firebase_url": "https://leaf-dictionary.firebaseio.com",
+    "project_id": "leaf-dictionary",
+    "storage_bucket": "leaf-dictionary.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:662335123717:android:31de2bad132289fd",
+        "android_client_info": {
+          "package_name": "cn.studyjams.s2.sj0191.ruofeng"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "662335123717-967eh1k19n5rnrois7d65j8i2f9jbqgc.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "cn.studyjams.s2.sj0191.ruofeng",
+            "certificate_hash": "63dcf3ca0fdbebdc1fb4cf1f3f78e611e9301fe4"
+          }
+        },
+        {
+          "client_id": "662335123717-mr3aq3g5o0ttl26e4h3smaf28m3oevu0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCFie0-LmvdCV3ljGAjvmP-q3TPK4rDuF4"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "662335123717-mr3aq3g5o0ttl26e4h3smaf28m3oevu0.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,15 +1,14 @@
 package cn.studyjams.s2.sj0191.ruofeng;
 
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import com.arlib.floatingsearchview.FloatingSearchView;
-import com.arlib.floatingsearchview.suggestions.model.SearchSuggestion;
 import com.google.gson.Gson;
+import com.mancj.materialsearchbar.MaterialSearchBar;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -32,30 +31,33 @@ public class MainActivity extends AppCompatActivity {
     public String myPhonetic;
     public String myTranslation;
     public TranslateResult myResult;
-    FloatingSearchView floatingSearchView;
+    MaterialSearchBar searchBar;
     private static final String TAG = "MainActivity";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        floatingSearchView = (FloatingSearchView) findViewById(R.id.floating_search_view);
+        searchBar = (MaterialSearchBar) findViewById(R.id.searchBar);
         wordView = (TextView) findViewById(R.id.word_view);
         phoneticView = (TextView) findViewById(R.id.phonetic_view);
         translateView = (TextView) findViewById(R.id.translate_view);
-
-        floatingSearchView.setOnSearchListener(new FloatingSearchView.OnSearchListener() {
+        searchBar.setOnSearchActionListener(new MaterialSearchBar.OnSearchActionListener() {
             @Override
-            public void onSuggestionClicked(SearchSuggestion searchSuggestion) {
+            public void onSearchStateChanged(boolean enabled) {
 
             }
 
             @Override
-            public void onSearchAction(String currentQuery) {
-                sendRequestWithOkHttp(currentQuery);
+            public void onSearchConfirmed(CharSequence text) {
+                sendRequestWithOkHttp(text.toString());
+            }
+
+            @Override
+            public void onButtonClicked(int buttonCode) {
+
             }
         });
-
     }
 
 
@@ -174,11 +176,16 @@ public class MainActivity extends AppCompatActivity {
                             .url(getURL(word))
                             .build();
                     Response response = client.newCall(request).execute();
-                    String responseData = response.body().string();
-                    Log.d(TAG, "++++++ " + responseData);
-                    parseJSON(responseData);
+                    if (response.isSuccessful() && response.body() != null) {
+                        String responseData = response.body().string();
+                        Log.d(TAG, "response JSON" + responseData);
+                        parseJSON(responseData);
+                    } else {
+                        ToastUtil.show(MainActivity.this, "查询请求失败");
+                    }
                 } catch (Exception e) {
                     e.printStackTrace();
+                    ToastUtil.show(MainActivity.this, "查询请求失败");
                 }
             }
         }).start();
@@ -187,20 +194,26 @@ public class MainActivity extends AppCompatActivity {
     private void parseJSON(String jsonData) {
         Gson gson = new Gson();
         myResult = gson.fromJson(jsonData, TranslateResult.class);
-        Log.d(TAG, "parseJSON: errorCode: " + myResult.getErrorCode());
+
         //查询出错，errorCode为0表示查询成功
-        if (!myResult.getErrorCode().equals("0"))
+        if (!myResult.getErrorCode().equals("0")) {
+            ToastUtil.show(MainActivity.this, "查询出错：" + myResult.getErrorCode());
             return;
-        //查询成功，但是结果为空
-        if (myResult.getBasic() == null || myResult.getTranslation() == null)
-            return;
-        Log.d(TAG, "parseJSON: " + myResult.getErrorCode());
-        Log.d(TAG, "parseJSON: " + myResult.getQuery());
-        Log.d(TAG, "parseJSON: " + myResult.getBasic().getPhonetic());
-        Log.d(TAG, "parseJSON: " + myResult.getTranslation().get(0));
-        for (String explain : myResult.getBasic().getExplains()) {
-            Log.d(TAG, "parseJSON: " + explain);
         }
+        //查询成功，但是结果为空
+        if (myResult.getBasic() == null || myResult.getTranslation() == null) {
+            ToastUtil.show(MainActivity.this, "没有找到结果");
+            return;
+        }
+
+        for (String explain : myResult.getBasic().getExplains()) {
+            Log.d(TAG, "parseJSON: basic.explain" + explain);
+        }
+
+        Log.d(TAG, "parseJSON: errorCode: " + myResult.getErrorCode());
+        Log.d(TAG, "parseJSON: query: " + myResult.getQuery());
+        Log.d(TAG, "parseJSON: translation: " + myResult.getTranslation().get(0));
+        Log.d(TAG, "parseJSON: basic.phonetic: " + myResult.getBasic().getPhonetic());
 
         myQuery = myResult.getQuery();
         myPhonetic = myResult.getBasic().getPhonetic();
@@ -211,15 +224,20 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void run() {
                 wordView.setText(myQuery);
-                StringBuffer afterPhonetic = new StringBuffer(myPhonetic);
-                afterPhonetic.append('/');
-                afterPhonetic.insert(0, '/');
-                phoneticView.setText(afterPhonetic);
+                //有可能有的查询结果没有音标
+                if (myPhonetic == null)
+                    phoneticView.setText("");
+                else {
+                    StringBuffer afterPhonetic = new StringBuffer(myPhonetic);
+                    afterPhonetic.append('/');
+                    afterPhonetic.insert(0, '/');
+                    phoneticView.setText(afterPhonetic);
+                }
                 translateView.setText(myTranslation);
                 ArrayAdapter<String> adapter = new ArrayAdapter<String>(
                         MainActivity.this, R.layout.list_item, myResult.getBasic().getExplains()
                 );
-                ListView listView = (ListView) findViewById(R.id.explains_list_view);
+                ListView listView = findViewById(R.id.explains_list_view);
                 listView.setAdapter(adapter);
             }
         });

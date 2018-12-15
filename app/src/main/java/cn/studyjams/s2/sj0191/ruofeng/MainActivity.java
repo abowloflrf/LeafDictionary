@@ -39,10 +39,10 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        floatingSearchView=(FloatingSearchView)findViewById(R.id.floating_search_view);
-        wordView=(TextView)findViewById(R.id.word_view);
-        phoneticView=(TextView)findViewById(R.id.phonetic_view);
-        translateView=(TextView)findViewById(R.id.translate_view);
+        floatingSearchView = (FloatingSearchView) findViewById(R.id.floating_search_view);
+        wordView = (TextView) findViewById(R.id.word_view);
+        phoneticView = (TextView) findViewById(R.id.phonetic_view);
+        translateView = (TextView) findViewById(R.id.translate_view);
 
         floatingSearchView.setOnSearchListener(new FloatingSearchView.OnSearchListener() {
             @Override
@@ -59,13 +59,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-
-    public String getURL(String word){
-        String appKey ="00e74b045d1c7225";
+    public String getURL(String word) {
+        String appKey = "00e74b045d1c7225";
         String salt = String.valueOf(System.currentTimeMillis());
         String from = "en";
         String to = "zh-CN";
-        String sign = md5(appKey + word + salt+ "uuXTCBFEW65hYsLHW1RA6OoeVeT5S3Mx");
+        String sign = md5(appKey + word + salt + "uuXTCBFEW65hYsLHW1RA6OoeVeT5S3Mx");
         Map<String, String> params = new HashMap<String, String>();
         params.put("q", word);
         params.put("from", from);
@@ -78,13 +77,13 @@ public class MainActivity extends AppCompatActivity {
 
 
     public static String md5(String string) {
-        if(string == null){
+        if (string == null) {
             return null;
         }
         char hexDigits[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
                 'A', 'B', 'C', 'D', 'E', 'F'};
         byte[] btInput = string.getBytes();
-        try{
+        try {
             /** 获得MD5摘要算法的 MessageDigest 对象 */
             MessageDigest mdInst = MessageDigest.getInstance("MD5");
             /** 使用指定的字节更新摘要 */
@@ -100,13 +99,14 @@ public class MainActivity extends AppCompatActivity {
                 str[k++] = hexDigits[byte0 & 0xf];
             }
             return new String(str);
-        }catch(NoSuchAlgorithmException e){
+        } catch (NoSuchAlgorithmException e) {
             return null;
         }
     }
 
     /**
      * 根据api地址和参数生成请求URL
+     *
      * @param url
      * @param params
      * @return
@@ -143,8 +143,10 @@ public class MainActivity extends AppCompatActivity {
 
         return builder.toString();
     }
+
     /**
      * 进行URL编码
+     *
      * @param input
      * @return
      */
@@ -162,53 +164,62 @@ public class MainActivity extends AppCompatActivity {
         return input;
     }
 
-    private void sendRequestWithOkHttp(final String word){
+    private void sendRequestWithOkHttp(final String word) {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                try{
-                    OkHttpClient client=new OkHttpClient();
-                    Request request=new Request.Builder()
+                try {
+                    OkHttpClient client = new OkHttpClient();
+                    Request request = new Request.Builder()
                             .url(getURL(word))
                             .build();
-                    Response response=client.newCall(request).execute();
-                    String responseData=response.body().string();
+                    Response response = client.newCall(request).execute();
+                    String responseData = response.body().string();
+                    Log.d(TAG, "++++++ " + responseData);
                     parseJSON(responseData);
-                }catch (Exception e){
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
         }).start();
     }
 
-    private void parseJSON(String jsonData){
-        Gson gson=new Gson();
-        myResult=gson.fromJson(jsonData,TranslateResult.class);
-        Log.d(TAG, "parseJSON: "+myResult.getQuery());
-        Log.d(TAG, "parseJSON: "+myResult.getBasic().getPhonetic());
-        Log.d(TAG, "parseJSON: "+myResult.getTranslation().get(0));
-        for(String explain:myResult.getBasic().getExplains()){
-            Log.d(TAG, "parseJSON: "+explain);
+    private void parseJSON(String jsonData) {
+        Gson gson = new Gson();
+        myResult = gson.fromJson(jsonData, TranslateResult.class);
+        Log.d(TAG, "parseJSON: errorCode: " + myResult.getErrorCode());
+        //查询出错，errorCode为0表示查询成功
+        if (!myResult.getErrorCode().equals("0"))
+            return;
+        //查询成功，但是结果为空
+        if (myResult.getBasic() == null || myResult.getTranslation() == null)
+            return;
+        Log.d(TAG, "parseJSON: " + myResult.getErrorCode());
+        Log.d(TAG, "parseJSON: " + myResult.getQuery());
+        Log.d(TAG, "parseJSON: " + myResult.getBasic().getPhonetic());
+        Log.d(TAG, "parseJSON: " + myResult.getTranslation().get(0));
+        for (String explain : myResult.getBasic().getExplains()) {
+            Log.d(TAG, "parseJSON: " + explain);
         }
 
-        myQuery=myResult.getQuery();
-        myPhonetic=myResult.getBasic().getPhonetic();
-        myTranslation=myResult.getTranslation().get(0);
+        myQuery = myResult.getQuery();
+        myPhonetic = myResult.getBasic().getPhonetic();
+        myTranslation = myResult.getTranslation().get(0);
 
-
+        //render ui
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 wordView.setText(myQuery);
-                StringBuffer afterPhonetic=new StringBuffer(myPhonetic);
+                StringBuffer afterPhonetic = new StringBuffer(myPhonetic);
                 afterPhonetic.append('/');
-                afterPhonetic.insert(0,'/');
+                afterPhonetic.insert(0, '/');
                 phoneticView.setText(afterPhonetic);
                 translateView.setText(myTranslation);
-                ArrayAdapter<String> adapter=new ArrayAdapter<String>(
-                        MainActivity.this,R.layout.list_item,myResult.getBasic().getExplains()
+                ArrayAdapter<String> adapter = new ArrayAdapter<String>(
+                        MainActivity.this, R.layout.list_item, myResult.getBasic().getExplains()
                 );
-                ListView listView=(ListView)findViewById(R.id.explains_list_view);
+                ListView listView = (ListView) findViewById(R.id.explains_list_view);
                 listView.setAdapter(adapter);
             }
         });

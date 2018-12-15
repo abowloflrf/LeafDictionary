@@ -7,9 +7,18 @@ import java.util.List;
  */
 
 public class TranslateResult {
+    private String errorCode;
     private String query;
     private List<String> translation;
-    public details basic;
+    private details basic;
+
+    public String getErrorCode() {
+        return errorCode;
+    }
+
+    public void setErrorCode(String errorCode) {
+        this.errorCode = errorCode;
+    }
 
     public String getQuery() {
         return query;
@@ -18,6 +27,7 @@ public class TranslateResult {
     public void setQuery(String query) {
         this.query = query;
     }
+
     public List<String> getTranslation() {
         return translation;
     }
@@ -34,7 +44,7 @@ public class TranslateResult {
         this.basic = basic;
     }
 
-    public class details{
+    public class details {
         private String phonetic;
         private List<String> explains;
 
@@ -53,7 +63,6 @@ public class TranslateResult {
         public void setExplains(List<String> explains) {
             this.explains = explains;
         }
-
 
     }
 }

@@ -1,14 +1,20 @@
 package cn.studyjams.s2.sj0191.ruofeng;
 
+import android.app.Activity;
+import android.graphics.Color;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
+import android.support.v4.widget.DrawerLayout;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.View;
 import android.widget.ArrayAdapter;
+import android.widget.FrameLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 
 import com.google.gson.Gson;
 import com.mancj.materialsearchbar.MaterialSearchBar;
+import com.mancj.materialsearchbar.adapter.SuggestionsAdapter;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -22,7 +28,7 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends Activity implements MaterialSearchBar.OnSearchActionListener {
 
     TextView wordView;
     TextView phoneticView;
@@ -32,32 +38,78 @@ public class MainActivity extends AppCompatActivity {
     public String myTranslation;
     public TranslateResult myResult;
     MaterialSearchBar searchBar;
+    DrawerLayout drawer;
+    FrameLayout frameView;
     private static final String TAG = "MainActivity";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         searchBar = (MaterialSearchBar) findViewById(R.id.searchBar);
         wordView = (TextView) findViewById(R.id.word_view);
         phoneticView = (TextView) findViewById(R.id.phonetic_view);
         translateView = (TextView) findViewById(R.id.translate_view);
-        searchBar.setOnSearchActionListener(new MaterialSearchBar.OnSearchActionListener() {
-            @Override
-            public void onSearchStateChanged(boolean enabled) {
+        frameView = (FrameLayout) findViewById(R.id.frame_layout_bg);
 
+        searchBar.setOnSearchActionListener(this);
+        searchBar.setSuggstionsClickListener(new SuggestionsAdapter.OnItemViewClickListener() {
+            @Override
+            public void OnItemClickListener(int position, View v) {
+                if (v.getTag() instanceof String) {
+//                    EditText searchEdit = searchBar.getSearchEditText();
+//                    searchEdit.setText((String) v.getTag());
+                    sendRequestWithOkHttp((String) v.getTag());
+                }
             }
 
-            @Override
-            public void onSearchConfirmed(CharSequence text) {
-                sendRequestWithOkHttp(text.toString());
-            }
 
             @Override
-            public void onButtonClicked(int buttonCode) {
+            public void OnItemDeleteListener(int position, View v) {
 
             }
         });
+    }
+
+    @Override
+    public void onButtonClicked(int buttonCode) {
+        switch (buttonCode) {
+            case MaterialSearchBar.BUTTON_NAVIGATION:
+                drawer.openDrawer(Gravity.START);
+                break;
+            case MaterialSearchBar.BUTTON_SPEECH:
+                break;
+            case MaterialSearchBar.BUTTON_BACK:
+                searchBar.disableSearch();
+                break;
+        }
+    }
+
+    @Override
+    public void onSearchStateChanged(boolean enabled) {
+        //并不知道背景色是不是应该这么改
+        int transparentBlack = getResources().getColor(R.color.transparentBlack);
+        if (enabled) {
+            frameView.setBackgroundColor(transparentBlack);
+        } else {
+            frameView.setBackgroundColor(Color.TRANSPARENT);
+        }
+    }
+
+    @Override
+    public void onSearchConfirmed(CharSequence text) {
+        sendRequestWithOkHttp(text.toString());
+    }
+
+    @Override
+    public void onBackPressed() {
+        DrawerLayout drawer = findViewById(R.id.drawer_layout);
+        if (drawer.isDrawerOpen(Gravity.START)) {
+            drawer.closeDrawer(Gravity.START);
+        } else {
+            super.onBackPressed();
+        }
     }
 
 
@@ -239,6 +291,8 @@ public class MainActivity extends AppCompatActivity {
                 );
                 ListView listView = findViewById(R.id.explains_list_view);
                 listView.setAdapter(adapter);
+
+                searchBar.disableSearch();
             }
         });
 
